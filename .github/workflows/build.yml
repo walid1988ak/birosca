@@ -1,0 +1,48 @@
+name: Build VMP1xUnpacker
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.1
+    
+    - name: Restore NuGet packages
+      run: nuget restore VMP1xUnpacker.sln
+    
+    - name: Build Solution
+      run: |
+        echo Building VMP1xUnpacker...
+        msbuild VMP1xUnpacker.sln `
+          /p:Configuration=Release `
+          /p:Platform="Any CPU" `
+          /p:PlatformToolset=v142 `
+          /verbosity:minimal
+    
+    - name: List output files
+      run: |
+        echo "=== Built files ==="
+        dir /s /b *.exe *.dll 2>nul || echo "No executables found"
+        echo "=== Bin folders ==="
+        if exist "bin" dir /s /b bin\
+        if exist "VMP1xUnpacker\bin" dir /s /b VMP1xUnpacker\bin\
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: VMP1xUnpacker-Build
+        path: |
+          **/*.exe
+          **/*.dll
+          **/bin/
+          VMP1xUnpacker/bin/
+        if-no-files-found: warn
